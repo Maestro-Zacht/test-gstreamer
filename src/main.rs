@@ -26,8 +26,8 @@ fn main() {
             let enc = gst::ElementFactory::make("x264enc").build().unwrap();
             let pay = gst::ElementFactory::make("rtph264pay").build().unwrap();
             let sink = gst::ElementFactory::make("multiudpsink").build().unwrap();
-            sink.emit_by_name::<()>("add", &[&"172.20.208.40", &"9001"]);
-            sink.emit_by_name::<()>("add", &[&"172.20.215.16", &"9001"]);
+            sink.emit_by_name_with_values("add", &["172.20.208.40".into(), 9001.into()]);
+            sink.emit_by_name_with_values("add", &["172.20.215.16".into(), 9001.into()]);
 
             let pipeline = gst::Pipeline::with_name("send-pipeline");
             pipeline.add_many(&[&source, &enc, &pay, &sink]).unwrap();
