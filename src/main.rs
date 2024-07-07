@@ -34,10 +34,7 @@ fn main() {
                 .build()
                 .unwrap();
 
-            let tee = gst::ElementFactory::make("tee")
-                .property("name", "t")
-                .build()
-                .unwrap();
+            let tee = gst::ElementFactory::make("tee").build().unwrap();
 
             let queue1 = gst::ElementFactory::make("queue").build().unwrap();
             let queue2 = gst::ElementFactory::make("queue").build().unwrap();
