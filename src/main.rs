@@ -66,4 +66,5 @@ fn main() {
             _ => (),
         }
     }
+    println!("End of stream");
 }
