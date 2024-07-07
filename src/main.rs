@@ -26,6 +26,14 @@ fn main() {
             .property("use-damage", false)
             .build()
             .unwrap();
+            let capsfilter = gst::ElementFactory::make("capsfilter")
+                .property("caps", gst::Caps::builder("video/x-raw")
+                    .field("framerate", &gst::Fraction::new(30, 1))
+                    .build()
+                )
+                .build()
+                .unwrap();
+            let videoconvert = gst::ElementFactory::make("videoconvert").build().unwrap();
             let enc = gst::ElementFactory::make("x264enc").build().unwrap();
             let pay = gst::ElementFactory::make("rtph264pay").build().unwrap();
             let sink = gst::ElementFactory::make("multiudpsink").build().unwrap();
@@ -33,9 +41,9 @@ fn main() {
             sink.emit_by_name_with_values("add", &["172.20.215.16".into(), 9001.into()]);
 
             let pipeline = gst::Pipeline::with_name("send-pipeline");
-            pipeline.add_many(&[&source, &enc, &pay, &sink]).unwrap();
+            pipeline.add_many(&[&source, &capsfilter, &videoconvert, &enc, &pay, &sink]).unwrap();
 
-            gst::Element::link_many(&[&source, &enc, &pay, &sink]).unwrap();
+            gst::Element::link_many(&[&source, &capsfilter, &videoconvert, &enc, &pay, &sink]).unwrap();
 
             pipeline
         }
