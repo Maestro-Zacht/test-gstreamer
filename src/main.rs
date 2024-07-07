@@ -43,16 +43,11 @@ fn main() {
                 .property("port", 9001)
                 .property(
                     "caps",
-                    &gst::Caps::builder("test")
-                        .field(
-                            "application/x-rtp",
-                            &gst::Structure::builder("application/x-rtp")
-                                .field("media", &"video")
-                                .field("clock-rate", &90000)
-                                .field("encoding-name", &"H264")
-                                .field("payload", &96)
-                                .build(),
-                        )
+                    &gst::Caps::builder("application/x-rtp")
+                        .field("media", "video")
+                        .field("clock-rate", 90000)
+                        .field("encoding-name", "H264")
+                        .field("payload", 96)
                         .build(),
                 )
                 .build()
