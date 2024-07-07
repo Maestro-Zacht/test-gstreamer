@@ -55,8 +55,8 @@ fn main() {
             let pipeline = gst::Pipeline::with_name("send-pipeline");
             pipeline.add_many(&[&source, &capsfilter, &videoconvert, &enc, &pay, &sink, &tee, &queue1, &queue2, &videoconvert2, &videosink]).unwrap();
 
-            gst::Element::link_many(&[&source, &capsfilter, &tee, &queue1, &videoconvert, &enc, &pay, &sink]).unwrap();
-            gst::Element::link_many(&[&tee, &queue2, &videoconvert2, &videosink]).unwrap();
+            gst::Element::link_many(&[&source, &capsfilter, &tee, &queue2, &videoconvert2, &videosink]).unwrap();
+            gst::Element::link_many(&[&tee, &queue1, &videoconvert, &enc, &pay, &sink]).unwrap();
 
             pipeline
         }
