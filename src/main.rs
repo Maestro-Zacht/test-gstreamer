@@ -22,7 +22,10 @@ fn main() {
 
     let pipeline = match cli.command {
         Commands::Send => {
-            let source = gst::ElementFactory::make("videotestsrc").build().unwrap();
+            let source = gst::ElementFactory::make("ximagesrc")
+            .property("use-damage", false)
+            .build()
+            .unwrap();
             let enc = gst::ElementFactory::make("x264enc").build().unwrap();
             let pay = gst::ElementFactory::make("rtph264pay").build().unwrap();
             let sink = gst::ElementFactory::make("multiudpsink").build().unwrap();
