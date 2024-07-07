@@ -39,29 +39,12 @@ fn main() {
             pipeline
         }
         Commands::Recv => {
-            let source = gst::ElementFactory::make("udpsrc")
-                .property("port", 9001)
-                .property(
-                    "caps",
-                    &gst::Caps::builder("application/x-rtp")
-                        .field("media", "video")
-                        .field("clock-rate", 90000)
-                        .field("encoding-name", "H264")
-                        .field("payload", 96)
-                        .build(),
-                )
-                .build()
-                .unwrap();
-            let depay = gst::ElementFactory::make("rtph264depay").build().unwrap();
-            let dec = gst::ElementFactory::make("decodebin").build().unwrap();
-            let sink = gst::ElementFactory::make("autovideosink").build().unwrap();
-
-            let pipeline = gst::Pipeline::with_name("recv-pipeline");
-            pipeline.add_many(&[&source, &depay, &dec, &sink]).unwrap();
-
-            gst::Element::link_many(&[&source, &depay, &dec, &sink]).unwrap();
-
-            pipeline
+            gst::parse::launch(
+                "udpsrc port=9001 caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96\" ! rtph264depay ! decodebin ! videoconvert ! autovideosink"
+            )
+            .unwrap()
+            .dynamic_cast::<gst::Pipeline>()
+            .unwrap()
         }
     };
 
