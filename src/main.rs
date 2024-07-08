@@ -43,10 +43,19 @@ fn main() {
             sink.emit_by_name_with_values("add", &["192.168.171.69".into(), 9001.into()]);
             sink.emit_by_name_with_values("add", &["192.168.161.163".into(), 9001.into()]);
 
-            let pipeline = gst::Pipeline::with_name("send-pipeline");
-            pipeline.add_many(&[&source, &capsfilter, &videoconvert, &enc, &pay, &sink]).unwrap();
+            let tee = gst::ElementFactory::make("tee").build().unwrap();
 
-            gst::Element::link_many(&[&source, &capsfilter, &videoconvert, &enc, &pay, &sink]).unwrap();
+            let queue1 = gst::ElementFactory::make("queue").build().unwrap();
+            let queue2 = gst::ElementFactory::make("queue").build().unwrap();
+
+            let videoconvert2 = gst::ElementFactory::make("videoconvert").build().unwrap();
+            let videosink = gst::ElementFactory::make("autovideosink").build().unwrap();
+
+            let pipeline = gst::Pipeline::with_name("send-pipeline");
+            pipeline.add_many(&[&source, &capsfilter, &tee, &queue1, &queue2, &videoconvert, &enc, &pay, &sink, &videoconvert2, &videosink]).unwrap();
+
+            gst::Element::link_many(&[&source, &capsfilter, &tee, &queue1, &videoconvert, &enc, &pay, &sink]).unwrap();
+            gst::Element::link_many(&[&tee, &queue2, &videoconvert2, &videosink]).unwrap();
 
             pipeline
         }
