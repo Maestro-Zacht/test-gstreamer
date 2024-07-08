@@ -40,8 +40,8 @@ fn main() {
                 .unwrap();
             let pay = gst::ElementFactory::make("rtph264pay").build().unwrap();
             let sink = gst::ElementFactory::make("multiudpsink").build().unwrap();
-            sink.emit_by_name_with_values("add", &["172.27.221.208".into(), 9001.into()]);
-            sink.emit_by_name_with_values("add", &["172.27.218.239".into(), 9001.into()]);
+            sink.emit_by_name_with_values("add", &["192.168.171.69".into(), 9001.into()]);
+            sink.emit_by_name_with_values("add", &["192.168.161.163".into(), 9001.into()]);
 
             let pipeline = gst::Pipeline::with_name("send-pipeline");
             pipeline.add_many(&[&source, &capsfilter, &videoconvert, &enc, &pay, &sink]).unwrap();
