@@ -34,7 +34,10 @@ fn main() {
                 .build()
                 .unwrap();
             let videoconvert = gst::ElementFactory::make("videoconvert").build().unwrap();
-            let enc = gst::ElementFactory::make("x264enc").build().unwrap();
+            let enc = gst::ElementFactory::make("x264enc")
+                .property("tune", "zerolatency")
+                .build()
+                .unwrap();
             let pay = gst::ElementFactory::make("rtph264pay").build().unwrap();
             let sink = gst::ElementFactory::make("multiudpsink").build().unwrap();
             sink.emit_by_name_with_values("add", &["172.27.221.208".into(), 9001.into()]);
