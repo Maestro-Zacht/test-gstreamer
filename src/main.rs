@@ -2,7 +2,7 @@ use gst::prelude::*;
 use gst::MessageView;
 use gstreamer as gst;
 
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 struct Cli {
@@ -12,8 +12,13 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    Send,
+    Send(SendArgs),
     Recv,
+}
+
+#[derive(Args, Debug)]
+struct SendArgs {
+    ips: Vec<String>,
 }
 
 fn main() {
@@ -21,7 +26,7 @@ fn main() {
     gst::init().unwrap();
 
     let pipeline = match cli.command {
-        Commands::Send => {
+        Commands::Send(SendArgs { ips }) => {
             let source = gst::ElementFactory::make("ximagesrc")
             .property("use-damage", false)
             .build()
@@ -40,8 +45,13 @@ fn main() {
                 .unwrap();
             let pay = gst::ElementFactory::make("rtph264pay").build().unwrap();
             let sink = gst::ElementFactory::make("multiudpsink").build().unwrap();
-            sink.emit_by_name_with_values("add", &["192.168.171.69".into(), 9001.into()]);
-            sink.emit_by_name_with_values("add", &["192.168.161.163".into(), 9001.into()]);
+
+            for ip in ips {
+                sink.emit_by_name_with_values("add", &[ip.into(), 9001.into()]);
+            }
+
+            // sink.emit_by_name_with_values("add", &["192.168.171.69".into(), 9001.into()]);
+            // sink.emit_by_name_with_values("add", &["192.168.161.163".into(), 9001.into()]);
 
             let tee = gst::ElementFactory::make("tee").build().unwrap();
 
