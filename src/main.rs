@@ -35,7 +35,7 @@ fn main() {
                 .unwrap();
             let videoconvert = gst::ElementFactory::make("videoconvert").build().unwrap();
             let enc = gst::ElementFactory::make("x264enc")
-                .property("tune", 0x4)
+                .property_from_str("tune", "zerolatency")
                 .build()
                 .unwrap();
             let pay = gst::ElementFactory::make("rtph264pay").build().unwrap();
