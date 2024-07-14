@@ -1,8 +1,11 @@
+use std::sync::Arc;
+use std::sync::Mutex;
 use std::thread;
 
 use gst::prelude::*;
 use gst::MessageView;
 use gstreamer as gst;
+use websocket::futures::sink;
 use websocket::sync::Server;
 
 use clap::{Args, Parser, Subcommand};
@@ -96,10 +99,19 @@ fn main() {
 
             thread::spawn(move || {
                 let server = Server::bind("0.0.0.0:9000").unwrap();
+                let sink = Arc::new(Mutex::new(sink));
                 for connection in server.filter_map(Result::ok) {
-                    let client = connection.accept().unwrap();
+                    let mut client = connection.accept().unwrap();
                     let ip = client.peer_addr().unwrap().ip().to_string();
-                    println!("New client: {}", ip);
+                    let sink_g = sink.lock().unwrap();
+                    sink_g.emit_by_name_with_values("add", &[(&ip).into(), 9001.into()]);
+                    let sink_clone = sink.clone();
+                    thread::spawn(move || {
+                        while let Ok(_) = client.recv_message() {}
+                        let sink_g = sink_clone.lock().unwrap();
+                        sink_g.emit_by_name_with_values("remove", &[(&ip).into(), 9001.into()]);
+                        println!("{} disconnected", ip);
+                    });
                 }
             });
 
