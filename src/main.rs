@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
+use std::time::Duration;
 
 use gst::prelude::*;
 use gst::MessageView;
@@ -118,10 +119,13 @@ fn main() {
             pipeline
         }
         Commands::Recv(ServerArgs { ip }) => {
-            let client = ClientBuilder::new(&format!("ws://{}:9000", ip))
-                .unwrap()
-                .connect_insecure()
-                .unwrap();
+            thread::spawn(move || {
+                let _client = ClientBuilder::new(&format!("ws://{}:9000", ip))
+                    .unwrap()
+                    .connect_insecure()
+                    .unwrap();
+                thread::sleep(Duration::from_secs(10));
+            });
 
             gst::parse::launch(
                 "udpsrc port=9001 caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96\" ! rtph264depay ! decodebin ! videoconvert ! autovideosink"
