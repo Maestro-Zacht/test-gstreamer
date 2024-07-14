@@ -104,6 +104,7 @@ fn main() {
                 for connection in server.filter_map(Result::ok) {
                     let mut client = connection.accept().unwrap();
                     let ip = client.peer_addr().unwrap().ip().to_string();
+                    println!("{} connected", ip);
                     let sink_g = sink.lock().unwrap();
                     sink_g.emit_by_name_with_values("add", &[(&ip).into(), 9001.into()]);
                     let sink_clone = sink.clone();
@@ -124,7 +125,7 @@ fn main() {
                     .unwrap()
                     .connect_insecure()
                     .unwrap();
-                thread::sleep(Duration::from_secs(10));
+                thread::sleep(Duration::from_secs(1000));
             });
 
             gst::parse::launch(
