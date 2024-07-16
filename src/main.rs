@@ -6,11 +6,10 @@ use std::time::Duration;
 use gst::prelude::*;
 use gst::MessageView;
 use gstreamer as gst;
-use websocket::futures::sink;
-use websocket::sync::Server;
+use message_io::network::{NetEvent, Transport};
+use message_io::node::{self};
 
 use clap::{Args, Parser, Subcommand};
-use websocket::ClientBuilder;
 
 #[derive(Parser, Debug)]
 struct Cli {
@@ -99,33 +98,41 @@ fn main() {
             gst::Element::link_many(&[&tee, &queue2, &videoconvert2, &videosink]).unwrap();
 
             thread::spawn(move || {
-                let server = Server::bind("0.0.0.0:9000").unwrap();
-                let sink = Arc::new(Mutex::new(sink));
-                for connection in server.filter_map(Result::ok) {
-                    let mut client = connection.accept().unwrap();
-                    let ip = client.peer_addr().unwrap().ip().to_string();
-                    println!("{} connected", ip);
-                    let sink_g = sink.lock().unwrap();
-                    sink_g.emit_by_name_with_values("add", &[(&ip).into(), 9001.into()]);
-                    let sink_clone = sink.clone();
-                    thread::spawn(move || {
-                        while let Ok(_) = client.recv_message() {}
-                        let sink_g = sink_clone.lock().unwrap();
-                        sink_g.emit_by_name_with_values("remove", &[(&ip).into(), 9001.into()]);
+                let (handler, listener) = node::split::<()>();
+                handler
+                    .network()
+                    .listen(Transport::Ws, "0.0.0.0:9000")
+                    .unwrap();
+                listener.for_each(move |event| match event.network() {
+                    NetEvent::Connected(_, _) => unreachable!(),
+                    NetEvent::Accepted(endpoint, _) => {
+                        let ip = endpoint.addr().ip().to_string();
+                        sink.emit_by_name_with_values("add", &[(&ip).into(), 9001.into()]);
+                        println!("{} connected", ip);
+                    }
+                    NetEvent::Message(_endpoint, _data) => println!("Message"),
+                    NetEvent::Disconnected(endpoint) => {
+                        let ip = endpoint.addr().ip().to_string();
+                        sink.emit_by_name_with_values("remove", &[(&ip).into(), 9001.into()]);
                         println!("{} disconnected", ip);
-                    });
-                }
+                    }
+                });
             });
 
             pipeline
         }
         Commands::Recv(ServerArgs { ip }) => {
             thread::spawn(move || {
-                let _client = ClientBuilder::new(&format!("ws://{}:9000", ip))
-                    .unwrap()
-                    .connect_insecure()
+                let (handler, listener) = node::split::<()>();
+                let (server, _) = handler
+                    .network()
+                    .connect(Transport::Ws, format!("{}:9000", ip))
                     .unwrap();
-                thread::sleep(Duration::from_secs(1000));
+                //     let _client = ClientBuilder::new(&format!("ws://{}:9000", ip))
+                //         .unwrap()
+                //         .connect_insecure()
+                //         .unwrap();
+                //     thread::sleep(Duration::from_secs(1000));
             });
 
             gst::parse::launch(
