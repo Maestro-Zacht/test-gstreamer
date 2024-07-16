@@ -131,6 +131,7 @@ fn main() {
                 thread::spawn(move || {
                     thread::sleep(Duration::from_secs(10));
                     handler.stop();
+                    println!("stopped");
                 });
                 listener.for_each(move |event| match event.network() {
                     NetEvent::Connected(_, _) => {
