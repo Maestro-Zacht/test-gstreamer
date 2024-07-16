@@ -1,5 +1,3 @@
-use std::sync::Arc;
-use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
 
@@ -103,6 +101,13 @@ fn main() {
                     .network()
                     .listen(Transport::Ws, "0.0.0.0:9000")
                     .unwrap();
+
+                thread::spawn(move || {
+                    thread::sleep(Duration::from_secs(20));
+                    handler.stop();
+                    println!("stopped server");
+                });
+
                 listener.for_each(move |event| match event.network() {
                     NetEvent::Connected(_, _) => unreachable!(),
                     NetEvent::Accepted(endpoint, _) => {
@@ -129,7 +134,7 @@ fn main() {
                     .connect(Transport::Ws, format!("{}:9000", ip))
                     .unwrap();
                 thread::spawn(move || {
-                    thread::sleep(Duration::from_secs(10));
+                    thread::sleep(Duration::from_secs(1000));
                     handler.stop();
                     println!("stopped");
                 });
