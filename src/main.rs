@@ -1,4 +1,7 @@
+use std::sync::Arc;
+use std::sync::Mutex;
 use std::thread;
+use std::time::Duration;
 
 use gst::prelude::*;
 use gst::MessageView;
@@ -125,12 +128,21 @@ fn main() {
                     .network()
                     .connect(Transport::Ws, format!("{}:9000", ip))
                     .unwrap();
+                thread::spawn(move || {
+                    thread::sleep(Duration::from_secs(10));
+                    handler.stop();
+                });
                 listener.for_each(move |event| match event.network() {
-                    NetEvent::Connected(_, _) => println!("Connected"),
+                    NetEvent::Connected(_, _) => {
+                        println!("Connected");
+                    }
                     NetEvent::Accepted(_, _) => unreachable!(),
                     NetEvent::Message(_endpoint, _data) => println!("Message"),
                     NetEvent::Disconnected(_endpoint) => println!("disconnected"),
                 });
+
+                println!("exit?");
+
                 //     let _client = ClientBuilder::new(&format!("ws://{}:9000", ip))
                 //         .unwrap()
                 //         .connect_insecure()
