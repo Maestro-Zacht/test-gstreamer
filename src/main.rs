@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
@@ -102,9 +103,13 @@ fn main() {
                     .listen(Transport::Ws, "0.0.0.0:9000")
                     .unwrap();
 
+                let sink = Arc::new(sink);
+
+                let sink_clone = sink.clone();
                 thread::spawn(move || {
                     thread::sleep(Duration::from_secs(20));
                     handler.stop();
+                    sink_clone.emit_by_name_with_values("clear", &[]);
                     println!("stopped server");
                 });
 
@@ -122,6 +127,8 @@ fn main() {
                         println!("{} disconnected", ip);
                     }
                 });
+
+                println!("exit server listener");
             });
 
             pipeline
