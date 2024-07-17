@@ -105,13 +105,13 @@ fn main() {
 
                 let sink = Arc::new(sink);
 
-                let sink_clone = sink.clone();
-                thread::spawn(move || {
-                    thread::sleep(Duration::from_secs(20));
-                    handler.stop();
-                    sink_clone.emit_by_name_with_values("clear", &[]);
-                    println!("stopped server");
-                });
+                // let sink_clone = sink.clone();
+                // thread::spawn(move || {
+                //     thread::sleep(Duration::from_secs(20));
+                //     handler.stop();
+                //     sink_clone.emit_by_name_with_values("clear", &[]);
+                //     println!("stopped server");
+                // });
 
                 listener.for_each(move |event| match event.network() {
                     NetEvent::Connected(_, _) => unreachable!(),
@@ -140,11 +140,11 @@ fn main() {
                     .network()
                     .connect(Transport::Ws, format!("{}:9000", ip))
                     .unwrap();
-                thread::spawn(move || {
-                    thread::sleep(Duration::from_secs(1000));
-                    handler.stop();
-                    println!("stopped");
-                });
+                // thread::spawn(move || {
+                //     thread::sleep(Duration::from_secs(1000));
+                //     handler.stop();
+                //     println!("stopped");
+                // });
                 listener.for_each(move |event| match event.network() {
                     NetEvent::Connected(_, _) => {
                         println!("Connected");
@@ -165,6 +165,10 @@ fn main() {
 
             let source = gst::ElementFactory::make("udpsrc")
                 .property("port", 9001)
+                .build()
+                .unwrap();
+
+            let capsfilter = gst::ElementFactory::make("capsfilter")
                 .property(
                     "caps",
                     gst::Caps::builder("application/x-rtp")
@@ -185,10 +189,11 @@ fn main() {
             let pipeline = gst::Pipeline::with_name("recv-pipeline");
 
             pipeline
-                .add_many(&[&source, &depay, &decode, &convert, &sink])
+                .add_many(&[&source, &capsfilter, &depay, &decode, &convert, &sink])
                 .unwrap();
 
-            gst::Element::link_many(&[&source, &depay, &decode, &convert, &sink]).unwrap();
+            gst::Element::link_many(&[&source, &capsfilter, &depay, &decode, &convert, &sink])
+                .unwrap();
 
             pipeline
         }
