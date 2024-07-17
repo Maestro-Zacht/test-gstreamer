@@ -182,18 +182,17 @@ fn main() {
                 .unwrap();
 
             let depay = gst::ElementFactory::make("rtph264depay").build().unwrap();
-            let decode = gst::ElementFactory::make("decodebin").build().unwrap();
+            // let decode = gst::ElementFactory::make("decodebin").build().unwrap();
             let convert = gst::ElementFactory::make("videoconvert").build().unwrap();
             let sink = gst::ElementFactory::make("autovideosink").build().unwrap();
 
             let pipeline = gst::Pipeline::with_name("recv-pipeline");
 
             pipeline
-                .add_many(&[&source, &capsfilter, &depay, &decode, &convert, &sink])
+                .add_many(&[&source, &capsfilter, &depay, &convert, &sink])
                 .unwrap();
 
-            gst::Element::link_many(&[&source, &capsfilter, &depay, &decode, &convert, &sink])
-                .unwrap();
+            gst::Element::link_many(&[&source, &capsfilter, &depay, &convert, &sink]).unwrap();
 
             pipeline
         }
