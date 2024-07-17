@@ -199,6 +199,9 @@ fn main() {
                 )
                 .unwrap();
             depay.link(&decode).unwrap();
+
+            decode.create_all_pads();
+
             decode.link(&convert).unwrap();
             convert.link(&sink).unwrap();
 
