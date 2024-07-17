@@ -168,18 +168,13 @@ fn main() {
                 .build()
                 .unwrap();
 
-            let capsfilter = gst::ElementFactory::make("capsfilter")
-                .property(
-                    "caps",
-                    gst::Caps::builder("application/x-rtp")
-                        .field("media", "video")
-                        .field("clock-rate", 90000)
-                        .field("encoding-name", "H264")
-                        .field("payload", 96)
-                        .build(),
-                )
-                .build()
-                .unwrap();
+            // let capsfilter = gst::ElementFactory::make("capsfilter")
+            //     .property(
+            //         "caps",
+            //         ,
+            //     )
+            //     .build()
+            //     .unwrap();
 
             let depay = gst::ElementFactory::make("rtph264depay").build().unwrap();
             let decode = gst::ElementFactory::make("decodebin").build().unwrap();
@@ -189,11 +184,20 @@ fn main() {
             let pipeline = gst::Pipeline::with_name("recv-pipeline");
 
             pipeline
-                .add_many(&[&source, &capsfilter, &depay, &decode, &convert, &sink])
+                .add_many(&[&source, &depay, &decode, &convert, &sink])
                 .unwrap();
 
-            source.link(&capsfilter).unwrap();
-            capsfilter.link(&depay).unwrap();
+            source
+                .link_filtered(
+                    &depay,
+                    &gst::Caps::builder("application/x-rtp")
+                        .field("media", "video")
+                        .field("clock-rate", 90000)
+                        .field("encoding-name", "H264")
+                        .field("payload", 96)
+                        .build(),
+                )
+                .unwrap();
             depay.link(&decode).unwrap();
             decode.link(&convert).unwrap();
             convert.link(&sink).unwrap();
