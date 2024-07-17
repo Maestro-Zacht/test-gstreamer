@@ -163,12 +163,34 @@ fn main() {
                 //     thread::sleep(Duration::from_secs(1000));
             });
 
-            gst::parse::launch(
-                "udpsrc port=9001 caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96\" ! rtph264depay ! decodebin ! videoconvert ! autovideosink"
-            )
-            .unwrap()
-            .dynamic_cast::<gst::Pipeline>()
-            .unwrap()
+            let source = gst::ElementFactory::make("udpsrc")
+                .property("port", 9001)
+                .property(
+                    "caps",
+                    gst::Caps::builder("application/x-rtp")
+                        .field("media", &"video")
+                        .field("clock-rate", &90000)
+                        .field("encoding-name", &"H264")
+                        .field("payload", &96)
+                        .build(),
+                )
+                .build()
+                .unwrap();
+
+            let depay = gst::ElementFactory::make("rtph264depay").build().unwrap();
+            let decode = gst::ElementFactory::make("decodebin").build().unwrap();
+            let convert = gst::ElementFactory::make("videoconvert").build().unwrap();
+            let sink = gst::ElementFactory::make("autovideosink").build().unwrap();
+
+            let pipeline = gst::Pipeline::with_name("recv-pipeline");
+
+            pipeline
+                .add_many(&[&source, &depay, &decode, &convert, &sink])
+                .unwrap();
+
+            gst::Element::link_many(&[&source, &depay, &decode, &convert, &sink]).unwrap();
+
+            pipeline
         }
     };
 
