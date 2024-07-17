@@ -41,7 +41,7 @@ fn main() {
                 .property(
                     "caps",
                     gst::Caps::builder("video/x-raw")
-                        .field("framerate", &gst::Fraction::new(30, 1))
+                        .field("framerate", gst::Fraction::new(30, 1))
                         .build(),
                 )
                 .build()
@@ -172,10 +172,10 @@ fn main() {
                 .property(
                     "caps",
                     gst::Caps::builder("application/x-rtp")
-                        .field("media", &"video")
-                        .field("clock-rate", &90000)
-                        .field("encoding-name", &"H264")
-                        .field("payload", &96)
+                        .field("media", "video")
+                        .field("clock-rate", 90000)
+                        .field("encoding-name", "H264")
+                        .field("payload", 96)
                         .build(),
                 )
                 .build()
