@@ -199,7 +199,16 @@ fn main() {
                 )
                 .unwrap();
             depay.link(&decode).unwrap();
-            decode.link(&convert).unwrap();
+
+            let convert_weak = convert.downgrade();
+            decode.connect_pad_added(move |_, src_pad| {
+                let sink_pad = match convert_weak.upgrade() {
+                    None => return,
+                    Some(s) => s.static_pad("sink").expect("cannot get sink pad from sink"),
+                };
+                src_pad.link(&sink_pad).unwrap();
+            });
+
             convert.link(&sink).unwrap();
 
             pipeline
