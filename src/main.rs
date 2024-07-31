@@ -1,11 +1,9 @@
 use std::sync::Arc;
 use std::thread;
-use std::time::Duration;
 
 use gst::prelude::*;
 use gst::MessageView;
 use gstreamer as gst;
-use gstreamer::glib::property;
 use message_io::network::{NetEvent, Transport};
 use message_io::node::{self};
 
@@ -105,6 +103,10 @@ fn main() {
             ])
             .unwrap();
             gst::Element::link_many(&[&tee, &queue2, &videoconvert2, &videosink]).unwrap();
+
+            if cfg!(target_os = "windows") {
+                source.set_property("show-cursor", true);
+            }
 
             thread::spawn(move || {
                 let (handler, listener) = node::split::<()>();
