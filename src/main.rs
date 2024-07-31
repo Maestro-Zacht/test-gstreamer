@@ -5,6 +5,7 @@ use std::time::Duration;
 use gst::prelude::*;
 use gst::MessageView;
 use gstreamer as gst;
+use gstreamer::glib::property;
 use message_io::network::{NetEvent, Transport};
 use message_io::node::{self};
 
@@ -33,13 +34,14 @@ fn main() {
 
     let pipeline = match cli.command {
         Commands::Send => {
-            let source = if cfg!(target_os = "linux") {
-                gst::ElementFactory::make("ximagesrc")
-                    .property("use-damage", false)
+            let source = if cfg!(target_os = "windows") {
+                gst::ElementFactory::make("d3d11screencapturesrc")
+                    .property("show-cursor", true)
                     .build()
                     .unwrap()
-            } else if cfg!(target_os = "windows") {
-                gst::ElementFactory::make("d3d11screencapturesrc")
+            } else if cfg!(target_os = "linux") {
+                gst::ElementFactory::make("ximagesrc")
+                    .property("use-damage", false)
                     .build()
                     .unwrap()
             } else {
