@@ -33,10 +33,18 @@ fn main() {
 
     let pipeline = match cli.command {
         Commands::Send => {
-            let source = gst::ElementFactory::make("ximagesrc")
-                .property("use-damage", false)
-                .build()
-                .unwrap();
+            let source = if cfg!(target_os = "linux") {
+                gst::ElementFactory::make("ximagesrc")
+                    .property("use-damage", false)
+                    .build()
+                    .unwrap()
+            } else if cfg!(target_os = "windows") {
+                gst::ElementFactory::make("d3d11screencapturesrc")
+                    .build()
+                    .unwrap()
+            } else {
+                todo!()
+            };
             let capsfilter = gst::ElementFactory::make("capsfilter")
                 .property(
                     "caps",
@@ -204,7 +212,7 @@ fn main() {
             decode.connect_pad_added(move |_, src_pad| {
                 let sink_pad = match convert_weak.upgrade() {
                     None => return,
-                    Some(s) => s.static_pad("sink").expect("cannot get sink pad from sink"),
+                    Some(s) => s.static_pad("sink").unwrap(),
                 };
                 src_pad.link(&sink_pad).unwrap();
             });
