@@ -32,81 +32,19 @@ fn main() {
 
     let pipeline = match cli.command {
         Commands::Send => {
-            let source = if cfg!(target_os = "windows") {
-                gst::ElementFactory::make("d3d11screencapturesrc")
-                    .property("show-cursor", true)
-                    .build()
-                    .unwrap()
-            } else if cfg!(target_os = "linux") {
-                gst::ElementFactory::make("ximagesrc")
-                    .property("use-damage", false)
-                    .build()
-                    .unwrap()
+            let pipeline_string = if cfg!(target_os = "windows") {
+                "input-selector name=i ! tee name=t ! queue ! autovideosink t. ! queue ! videoconvert ! x264enc tune=zerolatency ! rtph264pay ! multiudpsink name=sink d3d11screencapturesrc show-cursor=true ! video/x-raw,framerate=30/1 ! i.sink_0 videotestsrc ! i.sink_1"
             } else {
-                todo!()
+                "input-selector name=i ! tee name=t ! queue ! autovideosink t. ! queue ! videoconvert ! x264enc tune=zerolatency ! rtph264pay ! multiudpsink name=sink ximagesrc use-damage=false ! video/x-raw,framerate=30/1 ! i.sink_0 videotestsrc ! i.sink_1"
             };
-            let capsfilter = gst::ElementFactory::make("capsfilter")
-                .property(
-                    "caps",
-                    gst::Caps::builder("video/x-raw")
-                        .field("framerate", gst::Fraction::new(30, 1))
-                        .build(),
-                )
-                .build()
-                .unwrap();
-            let videoconvert = gst::ElementFactory::make("videoconvert").build().unwrap();
-            let enc = gst::ElementFactory::make("x264enc")
-                .property_from_str("tune", "zerolatency")
-                .build()
-                .unwrap();
-            let pay = gst::ElementFactory::make("rtph264pay").build().unwrap();
-            let sink = gst::ElementFactory::make("multiudpsink").build().unwrap();
 
-            // for ip in ips {
-            //     sink.emit_by_name_with_values("add", &[ip.into(), 9001.into()]);
-            // }
-
-            let tee = gst::ElementFactory::make("tee").build().unwrap();
-
-            let queue1 = gst::ElementFactory::make("queue").build().unwrap();
-            let queue2 = gst::ElementFactory::make("queue").build().unwrap();
-
-            let videoconvert2 = gst::ElementFactory::make("videoconvert").build().unwrap();
-            let videosink = gst::ElementFactory::make("autovideosink").build().unwrap();
-
-            let pipeline = gst::Pipeline::with_name("send-pipeline");
-            pipeline
-                .add_many(&[
-                    &source,
-                    &capsfilter,
-                    &tee,
-                    &queue1,
-                    &queue2,
-                    &videoconvert,
-                    &enc,
-                    &pay,
-                    &sink,
-                    &videoconvert2,
-                    &videosink,
-                ])
+            let pipeline = gst::parse::launch(pipeline_string)
+                .unwrap()
+                .dynamic_cast::<gst::Pipeline>()
                 .unwrap();
 
-            gst::Element::link_many(&[
-                &source,
-                &capsfilter,
-                &tee,
-                &queue1,
-                &videoconvert,
-                &enc,
-                &pay,
-                &sink,
-            ])
-            .unwrap();
-            gst::Element::link_many(&[&tee, &queue2, &videoconvert2, &videosink]).unwrap();
-
-            if cfg!(target_os = "windows") {
-                source.set_property("show-cursor", true);
-            }
+            let sink = pipeline.by_name("sink").unwrap();
+            let selector = pipeline.by_name("i").unwrap();
 
             thread::spawn(move || {
                 let (handler, listener) = node::split::<()>();
@@ -116,6 +54,8 @@ fn main() {
                     .unwrap();
 
                 let sink = Arc::new(sink);
+
+                let mut active_pad: u32 = 0;
 
                 // let sink_clone = sink.clone();
                 // thread::spawn(move || {
@@ -131,6 +71,13 @@ fn main() {
                         let ip = endpoint.addr().ip().to_string();
                         sink.emit_by_name_with_values("add", &[(&ip).into(), 9001.into()]);
                         println!("{} connected", ip);
+                        active_pad = (active_pad + 1) % 2;
+                        selector.set_property(
+                            "active-pad",
+                            &selector
+                                .static_pad(&format!("sink_{}", active_pad))
+                                .unwrap(),
+                        );
                     }
                     NetEvent::Message(_endpoint, _data) => println!("Message"),
                     NetEvent::Disconnected(endpoint) => {
