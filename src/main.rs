@@ -33,9 +33,9 @@ fn main() {
     let pipeline = match cli.command {
         Commands::Send => {
             let pipeline_string = if cfg!(target_os = "windows") {
-                "input-selector name=i ! tee name=t ! queue ! autovideosink t. ! queue ! videoconvert ! x264enc tune=zerolatency ! rtph264pay ! multiudpsink name=s d3d11screencapturesrc show-cursor=true ! video/x-raw,framerate=30/1 ! i.sink_0 videotestsrc ! video/x-raw,framerate=30/1 ! i.sink_1"
+                "input-selector name=i ! tee name=t ! queue ! autovideosink t. ! queue ! videoconvert ! x264enc tune=zerolatency ! rtph264pay ! multiudpsink name=s d3d11screencapturesrc show-cursor=true ! video/x-raw,framerate=30/1 ! i.sink_0 videotestsrc pattern=white ! video/x-raw,framerate=30/1 ! i.sink_1"
             } else {
-                "input-selector name=i ! tee name=t ! queue ! autovideosink t. ! queue ! videoconvert ! x264enc tune=zerolatency ! rtph264pay ! multiudpsink name=s ximagesrc use-damage=false ! video/x-raw,framerate=30/1 ! videoconvert ! i.sink_0 videotestsrc ! i.sink_1"
+                "input-selector name=i ! tee name=t ! queue ! autovideosink t. ! queue ! videoconvert ! x264enc tune=zerolatency ! rtph264pay ! multiudpsink name=s ximagesrc use-damage=false ! video/x-raw,framerate=30/1 ! videoconvert ! i.sink_0 videotestsrc pattern=white ! i.sink_1"
             };
 
             let pipeline = gst::parse::launch(pipeline_string)
